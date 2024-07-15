@@ -6,6 +6,7 @@ defmodule Water.WaterManagement.Usage do
     field :timestamp, :utc_datetime
     field :usage, :float
     field :meter_id, :string
+    belongs_to :household, Water.Households.Household
 
     timestamps(type: :utc_datetime)
   end
@@ -13,7 +14,8 @@ defmodule Water.WaterManagement.Usage do
   @doc false
   def changeset(usage, attrs) do
     usage
-    |> cast(attrs, [:meter_id, :usage, :timestamp])
-    |> validate_required([:meter_id, :usage, :timestamp])
+    |> cast(attrs, [:meter_id, :usage, :timestamp, :household_id])
+    |> validate_required([:usage, :timestamp, :household_id])
+    |> foreign_key_constraint(:household_id)
   end
 end

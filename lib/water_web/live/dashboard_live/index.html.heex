@@ -1,51 +1,123 @@
-<.header>
-  Water Usage Dashboard
-  <:actions>
-    <.link navigate={~p"/usages"}>
-      <.button>View All Usages</.button>
-    </.link>
-  </:actions>
-</.header>
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-6">Water Usage Dashboard</h1>
 
-<div id="usage-chart">
-  <svg width={@chart_params.width} height={@chart_params.height}>
-    <!-- X and Y axes -->
-    <line x1={@chart_params.padding} y1={@chart_params.height - @chart_params.padding} 
-          x2={@chart_params.width - @chart_params.padding} y2={@chart_params.height - @chart_params.padding} 
-          stroke="black" />
-    <line x1={@chart_params.padding} y1={@chart_params.height - @chart_params.padding} 
-          x2={@chart_params.padding} y2={@chart_params.padding} 
-          stroke="black" />
+  <div class="mb-8">
+    <h2 class="text-xl font-semibold mb-4">Select Estate and Household</h2>
+    <form phx-change="select-estate" class="mb-4">
+      <label for="estate-select" class="block mb-2">Estate:</label>
+      <select id="estate-select" name="estate-id" class="w-full p-2 border rounded">
+        <option value="">All Estates</option>
+        <%= for estate <- @estates do %>
+          <option value={estate.id} selected={@selected_estate && @selected_estate.id == estate.id}>
+            <%= estate.name %>
+          </option>
+        <% end %>
+      </select>
+    </form>
 
-    <!-- Data points -->
-    <polyline
-      fill="none"
-      stroke="#0074d9"
-      stroke-width="2"
-      points={@chart_params.data_points}
-    />
-
-    <!-- X-axis labels -->
-    <%= for {label, index} <- Enum.with_index(@chart_params.x_axis_labels) do %>
-      <text 
-        x={@chart_params.padding + index * (@chart_params.width - 2 * @chart_params.padding) / (length(@chart_params.x_axis_labels) - 1)} 
-        y={@chart_params.height - @chart_params.padding + 20} 
-        text-anchor="middle" 
-        font-size="10">
-        <%= label %>
-      </text>
+    <%= if @selected_estate do %>
+      <form phx-change="select-household" class="mb-4">
+        <label for="household-select" class="block mb-2">Household:</label>
+        <select id="household-select" name="household-id" class="w-full p-2 border rounded">
+          <option value="">All Households</option>
+          <%= for household <- @households do %>
+            <option value={household.id} selected={@selected_household && @selected_household.id == household.id}>
+              <%= household.name %>
+            </option>
+          <% end %>
+        </select>
+      </form>
     <% end %>
+  </div>
 
-    <!-- Y-axis labels -->
-    <%= for i <- 0..4 do %>
-      <% y_value = @chart_params.y_axis_min + i * (@chart_params.y_axis_max - @chart_params.y_axis_min) / 4 %>
-      <text 
-        x={@chart_params.padding - 10} 
-        y={@chart_params.height - @chart_params.padding - i * (@chart_params.height - 2 * @chart_params.padding) / 4} 
-        text-anchor="end" 
-        font-size="10">
-        <%= Float.round(y_value, 2) %>
-      </text>
+  <div class="mb-8">
+    <h2 class="text-xl font-semibold mb-4">Water Usage Chart</h2>
+    <%= if @chart_data != [] do %>
+      <div id="usage-chart" phx-update="ignore" class="w-full h-64 bg-gray-100">
+        <svg width={@chart_params.width} height={@chart_params.height}>
+          <!-- X and Y axes -->
+          <line x1={@chart_params.padding} y1={@chart_params.height - @chart_params.padding} 
+                x2={@chart_params.width - @chart_params.padding} y2={@chart_params.height - @chart_params.padding} 
+                stroke="black" />
+          <line x1={@chart_params.padding} y1={@chart_params.height - @chart_params.padding} 
+                x2={@chart_params.padding} y2={@chart_params.padding} 
+                stroke="black" />
+
+          <!-- Data points -->
+          <polyline
+            fill="none"
+            stroke="#0074d9"
+            stroke-width="2"
+            points={@chart_params.data_points}
+          />
+
+          <!-- X-axis labels -->
+          <%= for {label, index} <- Enum.with_index(@chart_params.x_axis_labels) do %>
+            <text 
+              x={@chart_params.padding + index * (@chart_params.width - 2 * @chart_params.padding) / (length(@chart_params.x_axis_labels) - 1)} 
+              y={@chart_params.height - @chart_params.padding + 20} 
+              text-anchor="middle" 
+              font-size="10">
+              <%= label %>
+            </text>
+          <% end %>
+
+          <!-- Y-axis labels -->
+          <%= for i <- 0..4 do %>
+            <% y_value = @chart_params.y_axis_min + i * (@chart_params.y_axis_max - @chart_params.y_axis_min) / 4 %>
+            <text 
+              x={@chart_params.padding - 10} 
+              y={@chart_params.height - @chart_params.padding - i * (@chart_params.height - 2 * @chart_params.padding) / 4} 
+              text-anchor="end" 
+              font-size="10">
+              <%= Float.round(y_value, 2) %>
+            </text>
+          <% end %>
+        </svg>
+      </div>
+    <% else %>
+      <p class="text-gray-600">No usage data available for the selected criteria.</p>
     <% end %>
-  </svg>
+  </div>
+
+  <div class="mb-8">
+    <h2 class="text-xl font-semibold mb-4">Potential Leaks</h2>
+    <%= if @leaks == [] do %>
+      <p class="text-green-600">No leaks detected.</p>
+    <% else %>
+      <ul class="list-disc pl-5">
+        <%= for leak <- @leaks do %>
+          <li class="text-red-600">
+            <strong>Estate:</strong> <%= leak.estate.name %>,
+            <strong>Household:</strong> <%= leak.household.name %>,
+            <strong>Usage:</strong> <%= Float.round(leak.total_usage, 2) %> (exceeds threshold)
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
+
+  <div>
+    <h2 class="text-xl font-semibold mb-4">Recent Usage Data</h2>
+    <table class="w-full border-collapse border">
+      <thead>
+        <tr>
+          <th class="border p-2">Timestamp</th>
+          <th class="border p-2">Estate</th>
+          <th class="border p-2">Household</th>
+          <th class="border p-2">Usage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for usage <- @recent_usages do %>
+          <tr>
+            <td class="border p-2"><%= Calendar.strftime(usage.timestamp, "%Y-%m-%d %H:%M:%S") %></td>
+            <td class="border p-2"><%= usage.household.estate.name %></td>
+            <td class="border p-2"><%= usage.household.name %></td>
+            <td class="border p-2"><%= Float.round(usage.usage, 2) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 </div>

@@ -7,6 +7,7 @@ defmodule Water.WaterManagement do
   alias Water.Repo
 
   alias Water.WaterManagement.Usage
+  alias Water.Households.Household
 
   @doc """
   Returns the list of usages.
@@ -101,4 +102,103 @@ defmodule Water.WaterManagement do
   def change_usage(%Usage{} = usage, attrs \\ %{}) do
     Usage.changeset(usage, attrs)
   end
+
+  @doc """
+  Returns a list of usages for a specific estate.
+
+  ## Examples
+
+      iex> list_usages_by_estate(1)
+      [%Usage{}, ...]
+
+  """
+  def list_usages_by_estate(estate_id) do
+    Usage
+    |> join(:inner, [u], h in assoc(u, :household))
+    |> where([u, h], h.estate_id == ^estate_id)
+    |> Repo.all()
+  end
+
+  @doc """
+  Returns a list of usages for a specific household.
+
+  ## Examples
+
+      iex> list_usages_by_household(1)
+      [%Usage{}, ...]
+
+  """
+  def list_usages_by_household(household_id) do
+    Usage
+    |> where([u], u.household_id == ^household_id)
+    |> Repo.all()
+  end
+
+  @doc """
+  Detects potential water leaks based on usage thresholds.
+
+  ## Parameters
+
+    - threshold: The usage threshold above which a leak is suspected (default: 50)
+
+  ## Examples
+
+      iex> detect_leaks()
+      [%{household: %Household{}, estate: %Estate{}, total_usage: 75.5}, ...]
+
+  """
+  def detect_leaks(threshold \\ 50) do
+    one_hour_ago = DateTime.utc_now() |> DateTime.add(-1, :hour)
+
+    leak_candidates =
+      Usage
+      |> where([u], u.timestamp >= ^one_hour_ago)
+      |> group_by([u], u.household_id)
+      |> having([u], sum(u.usage) > ^threshold)
+      |> select([u], {u.household_id, sum(u.usage)})
+      |> Repo.all()
+
+    Enum.reduce(leak_candidates, [], fn {household_id, total_usage}, acc ->
+      case Repo.get(Household, household_id) do
+        nil ->
+          IO.puts("Warning: Household with id #{household_id} not found")
+          acc
+        household ->
+          household = Repo.preload(household, :estate)
+          [%{
+            household: household,
+            estate: household.estate,
+            total_usage: total_usage
+          } | acc]
+      end
+    end)
+  end
+
+  def list_recent_usages(opts \\ []) do
+    limit = Keyword.get(opts, :limit, 10)
+    estate_id = Keyword.get(opts, :estate_id)
+    household_id = Keyword.get(opts, :household_id)
+
+    Usage
+    |> order_by([u], desc: u.timestamp)
+    |> limit(^limit)
+    |> filter_by_estate(estate_id)
+    |> filter_by_household(household_id)
+    |> Repo.all()
+    |> Repo.preload(household: :estate)
+  end
+
+  defp filter_by_estate(query, nil), do: query
+  defp filter_by_estate(query, estate_id) do
+    query
+    |> join(:inner, [u], h in assoc(u, :household))
+    |> where([u, h], h.estate_id == ^estate_id)
+  end
+
+  defp filter_by_household(query, nil), do: query
+  defp filter_by_household(query, household_id) do
+    query
+    |> where([u], u.household_id == ^household_id)
+  end
+
 end

@@ -2,6 +2,8 @@ defmodule WaterWeb.DashboardLive.Index do
   use WaterWeb, :live_view
 
   alias Water.WaterManagement
+  alias Water.Estates
+  alias Water.Households
 
   @impl true
   def mount(_params, _session, socket) do
@@ -9,24 +11,65 @@ defmodule WaterWeb.DashboardLive.Index do
       Phoenix.PubSub.subscribe(Water.PubSub, "water_usage")
     end
 
-    usages = WaterManagement.list_usages()
+    estates = Estates.list_estates()
 
     socket = socket
-      |> assign(:chart_data, prepare_chart_data(usages))
-      |> assign(:chart_params, calculate_chart_params(usages))
+      |> assign(:estates, estates)
+      |> assign(:selected_estate, nil)
+      |> assign(:households, [])
+      |> assign(:selected_household, nil)
+      |> assign(:chart_data, [])
+      |> assign(:chart_params, %{})
+      |> assign(:leaks, WaterManagement.detect_leaks())
+      |> assign(:recent_usages, WaterManagement.list_recent_usages())
 
     {:ok, socket}
   end
 
   @impl true
-  def handle_info({:usage_created, usage}, socket) do
-    new_data = [usage_to_chart_point(usage) | socket.assigns.chart_data]
-      |> Enum.take(50)
-      |> Enum.reverse()
+  def handle_event("select-estate", %{"estate-id" => estate_id}, socket) do
+    estate_id = String.to_integer(estate_id)
+    estate = Enum.find(socket.assigns.estates, &(&1.id == estate_id))
+    households = Households.list_households_by_estate(estate_id)
+    usages = WaterManagement.list_usages_by_estate(estate_id)
 
     socket = socket
-      |> assign(:chart_data, new_data)
-      |> assign(:chart_params, calculate_chart_params(new_data))
+      |> assign(:selected_estate, estate)
+      |> assign(:households, households)
+      |> assign(:selected_household, nil)
+      |> assign(:chart_data, prepare_chart_data(usages))
+      |> assign(:chart_params, calculate_chart_params(usages))
+      |> assign(:recent_usages, WaterManagement.list_recent_usages(estate_id))
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("select-household", %{"household-id" => household_id}, socket) do
+    household_id = String.to_integer(household_id)
+    household = Enum.find(socket.assigns.households, &(&1.id == household_id))
+    usages = WaterManagement.list_usages_by_household(household_id)
+
+    socket = socket
+      |> assign(:selected_household, household)
+      |> assign(:chart_data, prepare_chart_data(usages))
+      |> assign(:chart_params, calculate_chart_params(usages))
+      |> assign(:recent_usages, WaterManagement.list_recent_usages(household_id: household_id))
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:usage_created, usage}, socket) do
+    socket = socket
+      |> update(:chart_data, fn data ->
+        [usage_to_chart_point(usage) | data]
+        |> Enum.take(50)
+        |> Enum.reverse()
+      end)
+      |> assign(:chart_params, calculate_chart_params(socket.assigns.chart_data))
+      |> assign(:leaks, WaterManagement.detect_leaks())
+      |> update(:recent_usages, fn usages -> [usage | usages] |> Enum.take(10) end)
 
     {:noreply, socket}
   end
@@ -47,8 +90,8 @@ defmodule WaterWeb.DashboardLive.Index do
 
   defp calculate_chart_params(data) do
     usage_values = Enum.map(data, & &1.usage)
-    max_usage = Enum.max(usage_values)
-    min_usage = Enum.min(usage_values)
+    max_usage = Enum.max(usage_values ++ [0])
+    min_usage = Enum.min(usage_values ++ [0])
 
     %{
       width: 600,
@@ -63,12 +106,13 @@ defmodule WaterWeb.DashboardLive.Index do
 
   defp convert_to_svg_points(data, max_y, min_y, width, height, padding) do
     data_count = length(data)
-    x_step = (width - 2 * padding) / (data_count - 1)
+    x_step = (width - 2 * padding) / max(1, data_count - 1)
 
     Enum.with_index(data)
     |> Enum.map(fn {%{usage: y}, index} ->
       x = padding + index * x_step
-      y = height - padding - (y - min_y) / (max_y - min_y) * (height - 2 * padding)
+      y_range = max(0.1, max_y - min_y)  # Avoid division by zero
+      y = height - padding - (y - min_y) / y_range * (height - 2 * padding)
       "#{x},#{y}"
     end)
     |> Enum.join(" ")
