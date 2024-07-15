@@ -80,7 +80,7 @@
     <% end %>
   </div>
 
-  <div class="mb-8">
+   <div class="mb-8">
     <h2 class="text-xl font-semibold mb-4">Potential Leaks</h2>
     <%= if @leaks == [] do %>
       <p class="text-green-600">No leaks detected.</p>
@@ -88,9 +88,9 @@
       <ul class="list-disc pl-5">
         <%= for leak <- @leaks do %>
           <li class="text-red-600">
-            <strong>Estate:</strong> <%= leak.estate.name %>,
-            <strong>Household:</strong> <%= leak.household.name %>,
-            <strong>Usage:</strong> <%= Float.round(leak.total_usage, 2) %> (exceeds threshold)
+            <strong>Estate:</strong> <%= (leak.estate && leak.estate.name) || "Unknown" %>,
+            <strong>Household:</strong> <%= (leak.household && leak.household.name) || "Unknown" %>,
+            <strong>Usage:</strong> <%= leak.total_usage && Float.round(leak.total_usage, 2) || "Unknown" %> (exceeds threshold)
           </li>
         <% end %>
       </ul>

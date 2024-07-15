@@ -150,27 +150,25 @@ defmodule Water.WaterManagement do
   def detect_leaks(threshold \\ 50) do
     one_hour_ago = DateTime.utc_now() |> DateTime.add(-1, :hour)
 
-    leak_candidates =
-      Usage
-      |> where([u], u.timestamp >= ^one_hour_ago)
-      |> group_by([u], u.household_id)
-      |> having([u], sum(u.usage) > ^threshold)
-      |> select([u], {u.household_id, sum(u.usage)})
-      |> Repo.all()
-
-    Enum.reduce(leak_candidates, [], fn {household_id, total_usage}, acc ->
-      case Repo.get(Household, household_id) do
-        nil ->
-          IO.puts("Warning: Household with id #{household_id} not found")
-          acc
-        household ->
-          household = Repo.preload(household, :estate)
-          [%{
-            household: household,
-            estate: household.estate,
-            total_usage: total_usage
-          } | acc]
-      end
+    Usage
+    |> where([u], u.timestamp >= ^one_hour_ago)
+    |> group_by([u], u.household_id)
+    |> having([u], sum(u.usage) > ^threshold)
+    |> select([u], {u.household_id, sum(u.usage)})
+    |> Repo.all()
+    |> Enum.map(fn {household_id, total_usage} ->
+      Repo.get(Household, household_id)
+      |> Repo.preload(:estate)
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map(fn household ->
+      %{
+        household: household,
+        estate: household.estate,
+        total_usage: Repo.one(from u in Usage,
+          where: u.household_id == ^household.id and u.timestamp >= ^one_hour_ago,
+          select: sum(u.usage))
+      }
     end)
   end
 
@@ -200,5 +198,4 @@ defmodule Water.WaterManagement do
     query
     |> where([u], u.household_id == ^household_id)
   end
-
 end

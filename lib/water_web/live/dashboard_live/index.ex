@@ -13,6 +13,15 @@ defmodule WaterWeb.DashboardLive.Index do
 
     estates = Estates.list_estates()
 
+    leaks =
+      try do
+        WaterManagement.detect_leaks()
+      rescue
+        e ->
+          IO.puts("Error detecting leaks: #{inspect(e)}")
+          []
+      end
+
     socket = socket
       |> assign(:estates, estates)
       |> assign(:selected_estate, nil)
@@ -20,7 +29,7 @@ defmodule WaterWeb.DashboardLive.Index do
       |> assign(:selected_household, nil)
       |> assign(:chart_data, [])
       |> assign(:chart_params, %{})
-      |> assign(:leaks, WaterManagement.detect_leaks())
+      |> assign(:leaks, leaks)
       |> assign(:recent_usages, WaterManagement.list_recent_usages())
 
     {:ok, socket}
@@ -39,7 +48,7 @@ defmodule WaterWeb.DashboardLive.Index do
       |> assign(:selected_household, nil)
       |> assign(:chart_data, prepare_chart_data(usages))
       |> assign(:chart_params, calculate_chart_params(usages))
-      |> assign(:recent_usages, WaterManagement.list_recent_usages(estate_id))
+      |> assign(:recent_usages, WaterManagement.list_recent_usages(estate_id: estate_id))
 
     {:noreply, socket}
   end
