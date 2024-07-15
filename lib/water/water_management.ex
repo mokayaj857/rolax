@@ -182,8 +182,8 @@ defmodule Water.WaterManagement do
     |> limit(^limit)
     |> filter_by_estate(estate_id)
     |> filter_by_household(household_id)
+    |> preload([household: [estate: []]])
     |> Repo.all()
-    |> Repo.preload(household: :estate)
   end
 
   defp filter_by_estate(query, nil), do: query

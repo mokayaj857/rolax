@@ -98,26 +98,38 @@
   </div>
 
   <div>
-    <h2 class="text-xl font-semibold mb-4">Recent Usage Data</h2>
-    <table class="w-full border-collapse border">
-      <thead>
+  <h2 class="text-xl font-semibold mb-4">Recent Usage Data</h2>
+  <table class="w-full border-collapse border">
+    <thead>
+      <tr>
+        <th class="border p-2">Timestamp</th>
+        <th class="border p-2">Estate</th>
+        <th class="border p-2">Household</th>
+        <th class="border p-2">Usage</th>
+      </tr>
+    </thead>
+    <tbody>
+      <%= for usage <- @recent_usages do %>
         <tr>
-          <th class="border p-2">Timestamp</th>
-          <th class="border p-2">Estate</th>
-          <th class="border p-2">Household</th>
-          <th class="border p-2">Usage</th>
+          <td class="border p-2"><%= Calendar.strftime(usage.timestamp, "%Y-%m-%d %H:%M:%S") %></td>
+          <td class="border p-2">
+            <%= if usage.household && usage.household.estate do %>
+              <%= usage.household.estate.name %>
+            <% else %>
+              Unknown
+            <% end %>
+          </td>
+          <td class="border p-2">
+            <%= if usage.household do %>
+              <%= usage.household.name %>
+            <% else %>
+              Unknown
+            <% end %>
+          </td>
+          <td class="border p-2"><%= Float.round(usage.usage, 2) %></td>
         </tr>
-      </thead>
-      <tbody>
-        <%= for usage <- @recent_usages do %>
-          <tr>
-            <td class="border p-2"><%= Calendar.strftime(usage.timestamp, "%Y-%m-%d %H:%M:%S") %></td>
-            <td class="border p-2"><%= usage.household.estate.name %></td>
-            <td class="border p-2"><%= usage.household.name %></td>
-            <td class="border p-2"><%= Float.round(usage.usage, 2) %></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
+      <% end %>
+    </tbody>
+  </table>
+</div>
 </div>
