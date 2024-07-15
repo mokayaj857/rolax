@@ -18,6 +18,7 @@ defmodule WaterWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    live "/dashboard", DashboardLive.Index, :index
     live "/usages", UsageLive.Index, :index
     live "/usages/new", UsageLive.Index, :new
     live "/usages/:id/edit", UsageLive.Index, :edit

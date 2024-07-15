@@ -1,0 +1,16 @@
+<.header>
+  Water Usage Dashboard
+  <:actions>
+    <.link navigate={~p"/usages"}>
+      <.button>View All Usages</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<div id="usage-chart" phx-update="ignore" phx-hook="UsageChart">
+  <canvas id="myChart" phx-update="ignore"></canvas>
+</div>
+
+<script>
+  window.chartData = <%= Jason.encode!(@chart_data) %>;
+</script>
