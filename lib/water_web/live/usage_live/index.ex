@@ -28,7 +28,7 @@ defmodule WaterWeb.UsageLive.Index do
 
   @impl true
   def handle_info({:usage_created, usage}, socket) do
-    {:noreply, stream_insert(socket, :usages, usage)}
+    {:noreply, stream_insert(socket, :usages, usage, at: 0)}
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do

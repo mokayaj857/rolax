@@ -18,7 +18,7 @@ defmodule Water.WaterMeterSimulator do
   end
 
   defp schedule_reading do
-    Process.send_after(self(), :generate_reading, :timer.minutes(1))
+    Process.send_after(self(), :generate_reading, :timer.seconds(10))  # Generate a reading every 10 seconds
   end
 
   defp generate_reading do
@@ -28,7 +28,11 @@ defmodule Water.WaterMeterSimulator do
       timestamp: DateTime.utc_now()
     }
 
-    {:ok, usage} = WaterManagement.create_usage(usage)
-    Phoenix.PubSub.broadcast(Water.PubSub, "water_usage", {:usage_created, usage})
+    case WaterManagement.create_usage(usage) do
+      {:ok, created_usage} ->
+        Phoenix.PubSub.broadcast(Water.PubSub, "water_usage", {:usage_created, created_usage})
+      {:error, changeset} ->
+        IO.puts("Error creating usage: #{inspect(changeset)}")
+    end
   end
 end
