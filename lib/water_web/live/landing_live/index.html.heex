@@ -1,0 +1,22 @@
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-6">Water Usage Summary</h1>
+
+  <div class="mb-8">
+    <h2 class="text-2xl font-semibold mb-4">Total Water Usage (Last 30 Days)</h2>
+    <p class="text-xl mb-4">Total Usage: <%= Float.round(@total_usage, 2) %> units</p>
+    <div class="bg-white p-4 rounded-lg shadow">
+      <div id="total-usage-chart" phx-update="ignore" phx-hook="TotalUsageChart" data-usage={Jason.encode!(@total_usage_data)}></div>
+    </div>
+  </div>
+
+  <div class="mb-8">
+    <h2 class="text-2xl font-semibold mb-4">Water Usage by Estate (Last 30 Days)</h2>
+    <div class="bg-white p-4 rounded-lg shadow">
+      <div id="estate-usage-chart" phx-update="ignore" phx-hook="EstateUsageChart" data-usage={Jason.encode!(@estate_usage_data)}></div>
+    </div>
+  </div>
+
+  <.link navigate={~p"/estates"} class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">
+    View Estates
+  </.link>
+</div>

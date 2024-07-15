@@ -229,4 +229,37 @@ defmodule Water.WaterManagement do
     |> select([u], sum(u.usage))
     |> Repo.one() > 100  # Adjust this threshold as needed
   end
+
+  def get_total_usage(start_date, end_date) do
+    Usage
+    |> where([u], fragment("DATE(?)", u.timestamp) >= ^start_date)
+    |> where([u], fragment("DATE(?)", u.timestamp) <= ^end_date)
+    |> select([u], sum(u.usage))
+    |> Repo.one() || 0
+  end
+
+  def get_daily_total_usage(start_date, end_date) do
+    Usage
+    |> where([u], fragment("DATE(?)", u.timestamp) >= ^start_date)
+    |> where([u], fragment("DATE(?)", u.timestamp) <= ^end_date)
+    |> group_by([u], fragment("DATE(?)", u.timestamp))
+    |> select([u], {fragment("DATE(?)", u.timestamp), sum(u.usage)})
+    |> order_by([u], fragment("DATE(?)", u.timestamp))
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
+  def get_daily_estate_usage(start_date, end_date) do
+    Usage
+    |> join(:inner, [u], h in assoc(u, :household))
+    |> where([u], fragment("DATE(?)", u.timestamp) >= ^start_date)
+    |> where([u], fragment("DATE(?)", u.timestamp) <= ^end_date)
+    |> group_by([u, h], [fragment("DATE(?)", u.timestamp), h.estate_id])
+    |> select([u, h], {fragment("DATE(?)", u.timestamp), h.estate_id, sum(u.usage)})
+    |> order_by([u], fragment("DATE(?)", u.timestamp))
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn {date, estate_id, usage}, acc ->
+      Map.update(acc, date, %{estate_id => usage}, &Map.put(&1, estate_id, usage))
+    end)
+  end
 end

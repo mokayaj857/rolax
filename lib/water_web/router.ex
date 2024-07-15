@@ -17,7 +17,8 @@ defmodule WaterWeb.Router do
   scope "/", WaterWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    # get "/", PageController, :home
+    live "/", LandingLive.Index, :index
     live "/dashboard", DashboardLive.Index, :index
     live "/estates", EstateLive.Index, :index
     live "/households/:id", HouseholdLive.Show, :show
