@@ -6,6 +6,25 @@
     <p><strong>Estate:</strong> <%= @household.estate.name %></p>
   </div>
 
+  <h2 class="text-2xl font-semibold mb-4">Recent Usage Graph</h2>
+  <div class="mb-8">
+    <svg width={@graph_data.width} height={@graph_data.height}>
+      <polyline
+        fill="none"
+        stroke="#0074d9"
+        stroke-width="2"
+        points={@graph_data.points}
+      />
+      <!-- X and Y axes -->
+      <line x1="0" y1={@graph_data.height - 20} x2={@graph_data.width} y2={@graph_data.height - 20} stroke="black" />
+      <line x1="0" y1="0" x2="0" y2={@graph_data.height - 20} stroke="black" />
+      
+      <!-- Y-axis labels -->
+      <text x="5" y="15" font-size="12">{Float.round(@graph_data.max_usage, 2)}</text>
+      <text x="5" y={@graph_data.height - 5} font-size="12">{Float.round(@graph_data.min_usage, 2)}</text>
+    </svg>
+  </div>
+
   <h2 class="text-2xl font-semibold mb-4">Recent Usage Data</h2>
   <table class="w-full border-collapse border">
     <thead>
