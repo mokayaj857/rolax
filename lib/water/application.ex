@@ -12,6 +12,7 @@ defmodule Water.Application do
       Water.Repo,
       {DNSCluster, query: Application.get_env(:water, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Water.PubSub},
+      Water.WaterMeterSimulator,
       # Start the Finch HTTP client for sending emails
       {Finch, name: Water.Finch},
       # Start a worker by calling: Water.Worker.start_link(arg)

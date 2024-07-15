@@ -6,12 +6,28 @@ defmodule WaterWeb.UsageLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, stream(socket, :usages, WaterManagement.list_usages())}
+    if connected?(socket), do:
+      Phoenix.PubSub.subscribe(Water.PubSub, "water_usage")
+
+    {:ok, assign(socket, :usages, list_usages())}
   end
 
   @impl true
   def handle_params(params, _url, socket) do
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  end
+
+  @impl true
+  def handle_event("delete", %{"id" => id}, socket) do
+    usage = WaterManagement.get_usage!(id)
+    {:ok, _} = WaterManagement.delete_usage(usage)
+
+    {:noreply, assign(socket, :usages, list_usages())}
+  end
+
+  @impl true
+  def handle_info({:usage_created, usage}, socket) do
+    {:noreply, update(socket, :usages, fn usages -> [usage | usages] end)}
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
@@ -32,16 +48,7 @@ defmodule WaterWeb.UsageLive.Index do
     |> assign(:usage, nil)
   end
 
-  @impl true
-  def handle_info({WaterWeb.UsageLive.FormComponent, {:saved, usage}}, socket) do
-    {:noreply, stream_insert(socket, :usages, usage)}
-  end
-
-  @impl true
-  def handle_event("delete", %{"id" => id}, socket) do
-    usage = WaterManagement.get_usage!(id)
-    {:ok, _} = WaterManagement.delete_usage(usage)
-
-    {:noreply, stream_delete(socket, :usages, usage)}
+  defp list_usages do
+    WaterManagement.list_usages()
   end
 end

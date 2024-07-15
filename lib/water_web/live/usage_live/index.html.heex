@@ -7,25 +7,18 @@
   </:actions>
 </.header>
 
-<.table
-  id="usages"
-  rows={@streams.usages}
-  row_click={fn {_id, usage} -> JS.navigate(~p"/usages/#{usage}") end}
->
-  <:col :let={{_id, usage}} label="Meter"><%= usage.meter_id %></:col>
-  <:col :let={{_id, usage}} label="Usage"><%= usage.usage %></:col>
-  <:col :let={{_id, usage}} label="Timestamp"><%= usage.timestamp %></:col>
-  <:action :let={{_id, usage}}>
+<.table id="usages" rows={@usages}>
+  <:col :let={usage} label="Meter ID"><%= usage.meter_id %></:col>
+  <:col :let={usage} label="Usage"><%= usage.usage %></:col>
+  <:col :let={usage} label="Timestamp"><%= usage.timestamp %></:col>
+  <:action :let={usage}>
     <div class="sr-only">
       <.link navigate={~p"/usages/#{usage}"}>Show</.link>
     </div>
     <.link patch={~p"/usages/#{usage}/edit"}>Edit</.link>
   </:action>
-  <:action :let={{id, usage}}>
-    <.link
-      phx-click={JS.push("delete", value: %{id: usage.id}) |> hide("##{id}")}
-      data-confirm="Are you sure?"
-    >
+  <:action :let={usage}>
+    <.link phx-click={JS.push("delete", value: %{id: usage.id})} data-confirm="Are you sure?">
       Delete
     </.link>
   </:action>
