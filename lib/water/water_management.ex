@@ -198,4 +198,35 @@ defmodule Water.WaterManagement do
     query
     |> where([u], u.household_id == ^household_id)
   end
+
+  def get_usage_for_period(household_id, start_date, end_date) do
+    Usage
+    |> where([u], u.household_id == ^household_id)
+    |> where([u], fragment("DATE(?)", u.timestamp) >= ^start_date)
+    |> where([u], fragment("DATE(?)", u.timestamp) <= ^end_date)
+    |> select([u], sum(u.usage))
+    |> Repo.one() || 0
+  end
+
+  def get_daily_usage(household_id, start_date, end_date) do
+    Usage
+    |> where([u], u.household_id == ^household_id)
+    |> where([u], fragment("DATE(?)", u.timestamp) >= ^start_date)
+    |> where([u], fragment("DATE(?)", u.timestamp) <= ^end_date)
+    |> group_by([u], fragment("DATE(?)", u.timestamp))
+    |> select([u], {fragment("DATE(?)", u.timestamp), sum(u.usage)})
+    |> order_by([u], fragment("DATE(?)", u.timestamp))
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
+  def leak_detected?(household_id) do
+    one_day_ago = DateTime.utc_now() |> DateTime.add(-1, :day)
+
+    Usage
+    |> where([u], u.household_id == ^household_id)
+    |> where([u], u.timestamp >= ^one_day_ago)
+    |> select([u], sum(u.usage))
+    |> Repo.one() > 100  # Adjust this threshold as needed
+  end
 end

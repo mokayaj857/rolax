@@ -15,10 +15,30 @@
     <h2 class="text-2xl font-semibold mt-8 mb-4">Households in <%= @selected_estate.name %></h2>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <%= for household <- @households do %>
-        <div class="border p-4 rounded">
-          <h3 class="text-xl font-semibold"><%= household.name %></h3>
-          <p>Meter ID: <%= household.meter_id %></p>
-          <.link navigate={~p"/households/#{household}"} class="mt-2 inline-block bg-blue-500 text-white px-4 py-2 rounded">
+        <div class="border p-4 rounded shadow-md">
+          <h3 class="text-xl font-semibold mb-2"><%= household.name %></h3>
+          <p class="mb-1"><strong>Meter ID:</strong> <%= household.meter_id %></p>
+          <p class="mb-1"><strong>Today's Usage:</strong> <%= Float.round(household.today_usage, 2) %> units</p>
+          <p class="mb-1"><strong>This Week's Usage:</strong> <%= Float.round(household.week_usage, 2) %> units</p>
+          <p class="mb-3"><strong>Average Daily Usage:</strong> <%= Float.round(household.avg_daily_usage, 2) %> units</p>
+          
+          <div class="mb-3">
+            <h4 class="text-sm font-semibold mb-1">Usage Trend (Last 7 days)</h4>
+            <svg width="200" height="50" class="bg-gray-100">
+              <polyline
+                fill="none"
+                stroke="#0074d9"
+                stroke-width="2"
+                points={household.usage_trend}
+              />
+            </svg>
+          </div>
+          
+          <%= if household.leak_detected do %>
+            <p class="text-red-500 font-semibold mb-2">Potential leak detected!</p>
+          <% end %>
+          
+          <.link navigate={~p"/households/#{household}"} class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">
             View Details
           </.link>
         </div>
