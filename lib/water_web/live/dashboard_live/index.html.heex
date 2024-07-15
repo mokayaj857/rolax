@@ -7,10 +7,45 @@
   </:actions>
 </.header>
 
-<div id="usage-chart" phx-update="ignore" phx-hook="UsageChart">
-  <canvas id="myChart" phx-update="ignore"></canvas>
-</div>
+<div id="usage-chart">
+  <svg width={@chart_params.width} height={@chart_params.height}>
+    <!-- X and Y axes -->
+    <line x1={@chart_params.padding} y1={@chart_params.height - @chart_params.padding} 
+          x2={@chart_params.width - @chart_params.padding} y2={@chart_params.height - @chart_params.padding} 
+          stroke="black" />
+    <line x1={@chart_params.padding} y1={@chart_params.height - @chart_params.padding} 
+          x2={@chart_params.padding} y2={@chart_params.padding} 
+          stroke="black" />
 
-<script>
-  window.chartData = <%= Jason.encode!(@chart_data) %>;
-</script>
+    <!-- Data points -->
+    <polyline
+      fill="none"
+      stroke="#0074d9"
+      stroke-width="2"
+      points={@chart_params.data_points}
+    />
+
+    <!-- X-axis labels -->
+    <%= for {label, index} <- Enum.with_index(@chart_params.x_axis_labels) do %>
+      <text 
+        x={@chart_params.padding + index * (@chart_params.width - 2 * @chart_params.padding) / (length(@chart_params.x_axis_labels) - 1)} 
+        y={@chart_params.height - @chart_params.padding + 20} 
+        text-anchor="middle" 
+        font-size="10">
+        <%= label %>
+      </text>
+    <% end %>
+
+    <!-- Y-axis labels -->
+    <%= for i <- 0..4 do %>
+      <% y_value = @chart_params.y_axis_min + i * (@chart_params.y_axis_max - @chart_params.y_axis_min) / 4 %>
+      <text 
+        x={@chart_params.padding - 10} 
+        y={@chart_params.height - @chart_params.padding - i * (@chart_params.height - 2 * @chart_params.padding) / 4} 
+        text-anchor="end" 
+        font-size="10">
+        <%= Float.round(y_value, 2) %>
+      </text>
+    <% end %>
+  </svg>
+</div>
