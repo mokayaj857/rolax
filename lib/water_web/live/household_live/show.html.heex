@@ -1,0 +1,30 @@
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-6"><%= @household.name %> Details</h1>
+  
+  <div class="mb-8">
+    <p><strong>Meter ID:</strong> <%= @household.meter_id %></p>
+    <p><strong>Estate:</strong> <%= @household.estate.name %></p>
+  </div>
+
+  <h2 class="text-2xl font-semibold mb-4">Recent Usage Data</h2>
+  <table class="w-full border-collapse border">
+    <thead>
+      <tr>
+        <th class="border p-2">Timestamp</th>
+        <th class="border p-2">Usage</th>
+      </tr>
+    </thead>
+    <tbody>
+      <%= for usage <- @recent_usages do %>
+        <tr>
+          <td class="border p-2"><%= Calendar.strftime(usage.timestamp, "%Y-%m-%d %H:%M:%S") %></td>
+          <td class="border p-2"><%= Float.round(usage.usage, 2) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <.link navigate={~p"/estates"} class="mt-8 inline-block bg-gray-500 text-white px-4 py-2 rounded">
+    Back to Estates
+  </.link>
+</div>

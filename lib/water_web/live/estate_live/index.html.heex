@@ -1,0 +1,28 @@
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-6">Estate Selection</h1>
+
+  <form phx-change="select-estate">
+    <label for="estate-select" class="block mb-2">Select an Estate:</label>
+    <select id="estate-select" name="estate-id" class="w-full p-2 border rounded">
+      <option value="">Choose an estate</option>
+      <%= for estate <- @estates do %>
+        <option value={estate.id}><%= estate.name %></option>
+      <% end %>
+    </select>
+  </form>
+
+  <%= if @selected_estate do %>
+    <h2 class="text-2xl font-semibold mt-8 mb-4">Households in <%= @selected_estate.name %></h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <%= for household <- @households do %>
+        <div class="border p-4 rounded">
+          <h3 class="text-xl font-semibold"><%= household.name %></h3>
+          <p>Meter ID: <%= household.meter_id %></p>
+          <.link navigate={~p"/households/#{household}"} class="mt-2 inline-block bg-blue-500 text-white px-4 py-2 rounded">
+            View Details
+          </.link>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>

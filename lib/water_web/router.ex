@@ -19,6 +19,8 @@ defmodule WaterWeb.Router do
 
     get "/", PageController, :home
     live "/dashboard", DashboardLive.Index, :index
+    live "/estates", EstateLive.Index, :index
+    live "/households/:id", HouseholdLive.Show, :show
     live "/usages", UsageLive.Index, :index
     live "/usages/new", UsageLive.Index, :new
     live "/usages/:id/edit", UsageLive.Index, :edit
