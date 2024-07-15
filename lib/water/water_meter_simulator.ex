@@ -22,8 +22,9 @@ defmodule Water.WaterMeterSimulator do
   end
 
   defp schedule_reading do
-    Process.send_after(self(), :generate_reading, :timer.seconds(10))
+    Process.send_after(self(), :generate_reading, :timer.seconds(1))
   end
+
 
   defp generate_readings do
     Households.list_households()
@@ -38,6 +39,7 @@ defmodule Water.WaterMeterSimulator do
       case WaterManagement.create_usage(usage) do
         {:ok, created_usage} ->
           Phoenix.PubSub.broadcast(Water.PubSub, "water_usage", {:usage_created, created_usage})
+          Phoenix.PubSub.broadcast(Water.PubSub, "household:#{household.id}", {:new_usage, created_usage})
         {:error, changeset} ->
           IO.puts("Error creating usage: #{inspect(changeset)}")
       end

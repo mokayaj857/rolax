@@ -7,7 +7,11 @@ defmodule WaterWeb.HouseholdLive.Show do
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     household = Households.get_household!(id) |> Water.Repo.preload(:estate)
-    recent_usages = WaterManagement.list_recent_usages(household_id: household.id, limit: 10)
+    recent_usages = WaterManagement.list_recent_usages(household_id: household.id, limit: 20)
+
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(Water.PubSub, "household:#{household.id}")
+    end
 
     graph_data = prepare_graph_data(recent_usages)
 
@@ -19,6 +23,19 @@ defmodule WaterWeb.HouseholdLive.Show do
     {:ok, socket}
   end
 
+  @impl true
+  def handle_info({:new_usage, usage}, socket) do
+    updated_usages = [usage | socket.assigns.recent_usages] |> Enum.take(20)
+    graph_data = prepare_graph_data(updated_usages)
+
+    socket = assign(socket,
+      recent_usages: updated_usages,
+      graph_data: graph_data
+    )
+
+    {:noreply, socket}
+  end
+
   defp prepare_graph_data(usages) do
     usages
     |> Enum.reverse()
@@ -28,8 +45,8 @@ defmodule WaterWeb.HouseholdLive.Show do
       {usage, {width, height, new_min, new_max}}
     end)
     |> then(fn {usages, {width, height, min_usage, max_usage}} ->
-      y_scale = (height - 40) / (max_usage - min_usage)
-      x_scale = width / (length(usages) - 1)
+      y_scale = (height - 40) / max((max_usage - min_usage), 0.1)
+      x_scale = width / max((length(usages) - 1), 1)
 
       points = usages
       |> Enum.with_index()
